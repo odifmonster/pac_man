@@ -71,6 +71,12 @@ class ListCoord(Coord):
         """Return whether this list coordinate is within the bounds of the given rows and cols."""
 
         return self.x >= 0 and self.y >= 0 and self.x < ncols and self.y < nrows
+    
+    def getr(self):
+        return self.y
+    
+    def getc(self):
+        return self.x
 
 class FloatCoord(Coord):
     """Class for coordinates that refer to relative grid positions in the display rather than a list."""
