@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from enum import Enum
+import math
 
 from position import *
 
@@ -17,6 +18,9 @@ class Tile(Enum):
 
 class Maze:
 
+    # static constants
+    BOUNDARY_TILES = (Tile.EDGE, Tile.OOB, Tile.GHOST_WALL)
+
     def __init__(self, nrows: int = 31, ncols: int = 28) -> None:
         self.tiles = [[Tile.EMPTY for _ in range(ncols)] for _ in range(nrows)]
         self.nrows = nrows
@@ -25,8 +29,59 @@ class Maze:
     def __repr__(self) -> str:
         return '\n'.join([''.join([str(t) for t in row]) for row in self.tiles])
     
-    def set_tile(self, pos: ListCoord, ttype: Tile):
+    def get_tile(self, pos: ListCoord) -> Tile:
+        if not pos.is_in_bounds(self.nrows, self.ncols):
+            return Tile.OOB
+        
+        return self.tiles[pos.getr()][pos.getc()]
+    
+    def set_tile(self, pos: ListCoord, ttype: Tile) -> None:
         self.tiles[pos.y][pos.x] = ttype
+    
+    def get_tile_points(self, pos: ListCoord) -> list[FloatCoord]:
+        
+        if not pos.is_in_bounds(self.nrows, self.ncols):
+            raise IndexError('Cannot get drawable points for out-of-bounds maze tile.')
+        
+        if self.get_tile(pos) != Tile.EDGE:
+            return []
+        
+        moves = [Direction.UP, Direction.UP, Direction.LEFT, Direction.LEFT,
+                 Direction.DOWN, Direction.DOWN, Direction.RIGHT, Direction.RIGHT]
+        
+        start = -1
+        n_edges = 0
+
+        last_pos = pos.get_adj(Direction.DOWN).get_adj(Direction.RIGHT)
+        for i in range(len(moves)*2):
+            cur_pos = last_pos.get_adj(moves[i % len(moves)])
+
+            if self.get_tile(cur_pos) not in (Tile.EDGE, Tile.DOT):
+                n_edges += 1
+
+                if self.get_tile(last_pos) in (Tile.EMPTY, Tile.DOT):
+                    start = i
+            
+            last_pos = cur_pos
+        
+        if n_edges == len(moves)*2:
+            return []
+        
+        n_edges = (n_edges-2) // 4
+        start = ((start-1) % len(moves)) // 2
+        
+        theta0 = start*math.pi/2
+        theta1 = (start+n_edges)*math.pi/2
+        pos_c = FloatCoord(x=pos.x+0.5, y=pos.y+0.5)
+        points = [
+            pos_c,
+            FloatCoord(x=pos_c.x+math.cos(theta0)*0.5, y=pos_c.y-math.sin(theta0)*0.5),
+            FloatCoord(x=pos_c.x+math.cos(theta1)*0.5, y=pos_c.y-math.sin(theta1)*0.5)
+        ]
+
+        return points
+
+    # ================== MAZE INITIALIZATION ==================
     
     def add_block(self, block: Block, ttype: Tile) -> None:
 
