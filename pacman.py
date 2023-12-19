@@ -1,39 +1,35 @@
 #!/usr/bin/env python
+import os
 import pygame
 
-import maze, position
+from structures import maze as mz, position as pos
+
+# global constants
+TILE_SIZE = 18
+DOT_COLOR = (255,255,255)
 
 def main():
-    TILE_SIZE = 18
-    BG_COLOR = (0,0,0)
-    EDGE_COLOR = (0,0,255)
 
-    m = maze.Maze()
+    m = mz.Maze()
     m.init()
 
     pygame.init()
 
     screen = pygame.display.set_mode((m.ncols*TILE_SIZE, m.nrows*TILE_SIZE))
 
+    maze_img = pygame.image.load(os.path.join('gfx','maze_sqr.png'))
+
     running = True
     while running:
 
-        screen.fill(BG_COLOR)
+        screen.blit(maze_img, (0,0))
 
         for r in range(m.nrows):
             for c in range(m.ncols):
-                tile_pos = position.ListCoord(v=(c,r))
-
-                tile_points = m.get_tile_points(tile_pos)
-
-                if tile_points:
-                    start, end1, end2 = tile_points
-                    pygame.draw.line(screen, EDGE_COLOR,
-                                     (start.x*TILE_SIZE, start.y*TILE_SIZE),
-                                     (end1.x*TILE_SIZE, end1.y*TILE_SIZE))
-                    pygame.draw.line(screen, EDGE_COLOR,
-                                     (start.x*TILE_SIZE, start.y*TILE_SIZE),
-                                     (end2.x*TILE_SIZE, end2.y*TILE_SIZE))
+                
+                if m.get_tile(pos.ListCoord(x=c,y=r)) == mz.Tile.DOT:
+                    pygame.draw.circle(screen, DOT_COLOR,
+                                       ((c+0.5)*TILE_SIZE, (r+0.5)*TILE_SIZE), 2)
 
         pygame.display.flip()
 

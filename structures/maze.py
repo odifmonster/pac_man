@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
 from enum import Enum
-import math
+from typing import Sequence
+#import os, sys
+from pygame import Rect
 
-from position import *
+#SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+#sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from structures.position import *
 
 class Tile(Enum):
     """Enum for holding tile types and equivalent strings"""
@@ -38,7 +43,7 @@ class Maze:
     def set_tile(self, pos: ListCoord, ttype: Tile) -> None:
         self.tiles[pos.y][pos.x] = ttype
     
-    def get_tile_points(self, pos: ListCoord) -> list[FloatCoord]:
+    def get_tile_rects(self, pos: ListCoord, tsize: int) -> list[Rect]:
         
         if not pos.is_in_bounds(self.nrows, self.ncols):
             raise IndexError('Cannot get drawable points for out-of-bounds maze tile.')
@@ -46,44 +51,25 @@ class Maze:
         if self.get_tile(pos) != Tile.EDGE:
             return []
         
-        moves = [Direction.UP, Direction.UP, Direction.LEFT, Direction.LEFT,
-                 Direction.DOWN, Direction.DOWN, Direction.RIGHT, Direction.RIGHT]
-        
-        start = -1
-        n_edges = 0
+        moves = [Direction.E, Direction.NE, Direction.N, Direction.NW,
+                 Direction.W, Direction.SW, Direction.S, Direction.SE]
+        rects = []
+        float_pos = FloatCoord(x=pos.x*tsize, y=pos.y*tsize)
 
-        last_pos = pos.get_adj(Direction.DOWN).get_adj(Direction.RIGHT)
-        for i in range(len(moves)*2):
-            cur_pos = last_pos.get_adj(moves[i % len(moves)])
+        for move in moves:
+            adj = pos.get_adj(move)
 
-            if self.get_tile(cur_pos) not in (Tile.EDGE, Tile.DOT):
-                n_edges += 1
+            if self.get_tile(adj) not in Maze.BOUNDARY_TILES:
+                tl = float_pos.midpoint_to(FloatCoord(x=adj.x*tsize, y=adj.y*tsize))
+                rects.append(Rect(tl.x, tl.y, tsize, tsize))
+        
+        tile_rect = Rect(float_pos.x, float_pos.y, tsize, tsize)
 
-                if self.get_tile(last_pos) in (Tile.EMPTY, Tile.DOT):
-                    start = i
-            
-            last_pos = cur_pos
-        
-        if n_edges == len(moves)*2:
-            return []
-        
-        n_edges = (n_edges-2) // 4
-        start = ((start-1) % len(moves)) // 2
-        
-        theta0 = start*math.pi/2
-        theta1 = (start+n_edges)*math.pi/2
-        pos_c = FloatCoord(x=pos.x+0.5, y=pos.y+0.5)
-        points = [
-            pos_c,
-            FloatCoord(x=pos_c.x+math.cos(theta0)*0.5, y=pos_c.y-math.sin(theta0)*0.5),
-            FloatCoord(x=pos_c.x+math.cos(theta1)*0.5, y=pos_c.y-math.sin(theta1)*0.5)
-        ]
-
-        return points
+        return [rect.clip(tile_rect) for rect in rects]
 
     # ================== MAZE INITIALIZATION ==================
     
-    def add_block(self, block: Block, ttype: Tile) -> None:
+    def add_block(self, block: Block, ttype: Tile, ignore_type: Sequence[Tile] = []) -> None:
 
         start, end = block
 
@@ -97,7 +83,10 @@ class Maze:
         
         for r in range(start.y, end.y+1):
             for c in range(start.x, end.x+1):
-                self.set_tile(ListCoord(x=c,y=r), ttype)
+                pos = ListCoord(x=c, y=r)
+
+                if self.get_tile(pos) not in ignore_type:
+                    self.set_tile(ListCoord(x=c,y=r), ttype)
     
     def add_blocks(self, blocks: list[Block], ttype: Tile) -> None:
 
@@ -140,6 +129,10 @@ class Maze:
             ((7,-7),(8,-3)), ((-9,-7),(-8,-3)), ((self.ncols//2-1,-7),(self.ncols//2,-3))
         ]
         self.add_blocks(bottom_walls, Tile.EDGE)
+
+        self.add_block(((0,0),(-1,8)), Tile.DOT, ignore_type=Maze.BOUNDARY_TILES)
+        self.add_block(((0,-12),(-1,-1)), Tile.DOT, ignore_type=Maze.BOUNDARY_TILES)
+        self.add_blocks([((6,8),(6,-12)), ((-7,8),(-7,-12))], Tile.DOT)
 
 def main():
     print('You are runnning maze.py as a python script')
