@@ -69,8 +69,8 @@ def main():
                             pygame.draw.rect(screen, BG_COLOR, rect)
                     elif maze.get_tile(tpos) == Tile.GHOST_WALL:
                         pygame.draw.rect(screen, GWALL_COLOR,
-                                         (tpos.x*TILE_SIZE, (tpos.y+0.5)*TILE_SIZE,
-                                          TILE_SIZE, TILE_SIZE/2))
+                                         (tpos.x*TILE_SIZE, (tpos.y+0.5)*TILE_SIZE+2,
+                                          TILE_SIZE, TILE_SIZE/2-4))
             
             unfill = [[False for _ in range(screen.get_width())] for _ in range(screen.get_height())]
 

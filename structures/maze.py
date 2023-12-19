@@ -131,7 +131,7 @@ class Maze:
         self.add_blocks(bottom_walls, Tile.EDGE)
 
         self.add_block(((0,0),(-1,8)), Tile.DOT, ignore_type=Maze.BOUNDARY_TILES)
-        self.add_block(((0,-12),(-1,-1)), Tile.DOT, ignore_type=Maze.BOUNDARY_TILES)
+        self.add_block(((0,-11),(-1,-1)), Tile.DOT, ignore_type=Maze.BOUNDARY_TILES)
         self.add_blocks([((6,8),(6,-12)), ((-7,8),(-7,-12))], Tile.DOT)
 
 def main():
