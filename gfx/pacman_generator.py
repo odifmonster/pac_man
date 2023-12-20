@@ -1,8 +1,7 @@
 #!/usr/bin/env python
+import os
 import math
-
 import pygame, pygame.gfxdraw
-pygame.init()
 
 def filled_sect(surface, cx, cy, radius, theta0, theta1, color, ndiv=50):
     dtheta = (theta1-theta0) / ndiv
@@ -12,8 +11,12 @@ def filled_sect(surface, cx, cy, radius, theta0, theta1, color, ndiv=50):
     pygame.gfxdraw.filled_polygon(surface, points, color)
 
 def main():
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
     PACMAN_SIZE = 18*2
-    PACMAN_RAD = 0.7
+    PACMAN_RAD = 0.8
+
+    pygame.init()
 
     screen = pygame.display.set_mode((PACMAN_SIZE, PACMAN_SIZE))
 
@@ -38,7 +41,9 @@ def main():
         
         pygame.display.flip()
 
-        pygame.image.save(screen, f'pacman-{(nframes // 100) % 3}.png')
+        if nframes % 100 == 0:
+            fname = f'pacman-{(nframes // 100) % 3}.png'
+            pygame.image.save(screen, os.path.join(SCRIPT_DIR, fname))
 
         nframes += 1
 

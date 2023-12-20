@@ -35,6 +35,9 @@ class Maze:
         return '\n'.join([''.join([str(t) for t in row]) for row in self.tiles])
     
     def get_tile(self, pos: ListCoord) -> Tile:
+        if pos.getr() == 14 and (pos.getc() < 6 or pos.getc() >= self.ncols-6):
+            pos.wrap(self.ncols, self.nrows)
+        
         if not pos.is_in_bounds(self.nrows, self.ncols):
             return Tile.OOB
         
