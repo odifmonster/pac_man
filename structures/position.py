@@ -78,6 +78,12 @@ class Coord:
     def __eq__(self, coord) -> bool:
         return self.x == coord.x and self.y == coord.y
     
+    def __add__(self, coord):
+        return type(self)(self.x+coord.x, self.y+coord.y)
+    
+    def __sub__(self, coord):
+        return type(self)(self.x-coord.x, self.y-coord.y)
+    
     def get_tuple(self) -> tuple:
         """Get vector components as 2-tuple of form (x,y)."""
         return (self.x, self.y)
@@ -123,7 +129,8 @@ class ListCoord(Coord):
     """
 
     def __init__(self, x: int = None, y: int = None, v: tuple[int, int] = None, dir: Direction = None) -> None:
-        super().__init__(x, y, v, dir)
+        if not x is None and not y is None: super().__init__(int(x), int(y), v, dir)
+        else: super().__init__(x, y, v, dir)
     
     def __add__(self, coord):
         return ListCoord(self.x+int(coord.x), self.y+int(coord.y))
@@ -174,12 +181,6 @@ class FloatCoord(Coord):
         if self.x == 1 and self.y == 0: return Direction.E
 
         return None
-    
-    def __add__(self, coord):
-        return FloatCoord(self.x+coord.x, self.y+coord.y)
-    
-    def __sub__(self, coord):
-        return FloatCoord(self.x-coord.x, self.y-coord.y)
     
     def __mul__(self, scale: float):
         return FloatCoord(self.x*scale, self.y*scale)

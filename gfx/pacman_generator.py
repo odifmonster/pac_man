@@ -13,7 +13,7 @@ def filled_sect(surface, cx, cy, radius, theta0, theta1, color, ndiv=50):
 def main():
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    PACMAN_SIZE = 18*2
+    PACMAN_SIZE = 20*2
     PACMAN_RAD = 0.8
 
     pygame.init()

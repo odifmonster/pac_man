@@ -90,7 +90,7 @@ class Player(Agent):
             maze.set_tile(self.list_pos, Tile.EMPTY)
             self.last_dot.x, self.last_dot.y = self.list_pos.x, self.list_pos.y
             self.eating = True
-        elif self.list_pos != self.last_dot:
+        elif self.list_pos != self.last_dot or not self.is_moving:
             self.eating = False
     
     def update_pos(self, maze: Maze) -> None:
@@ -115,16 +115,24 @@ class Player(Agent):
 class Enemy(Agent):
 
     def __init__(self, 
+                 gfx_path: os.PathLike,
                  list_pos: CoordLike, 
                  speed_vec: CoordLike = (0, 0), 
                  speed_norm: float = 1,
-                 speed_reduction: float = 0.6):
+                 speed_reduction: float = 0.6,
+                 wave_rate: int = 6):
         
         super().__init__(list_pos, speed_vec, speed_norm)
 
         self.slow_norm = speed_norm*speed_reduction
-
         self.passable_tiles = [Tile.EMPTY, Tile.DOT]
+
+        self.gfx_path = gfx_path
+        imgs = sorted(os.listdir(gfx_path))
+        self.images = [(os.path.join(gfx_path, imgs[2*i]), os.path.join(gfx_path, imgs[2*i+1])) 
+                       for i in range(len(imgs)//2)]
+        self.images = [(load(w0), load(w1)) for w0, w1 in self.images]
+        self.wave_rate = wave_rate
 
     def move(self, maze: Maze) -> None:
 
@@ -154,3 +162,14 @@ class Enemy(Agent):
                         best_turn = turn
             
             self.speed_vec = FloatCoord(dir=best_turn)
+    
+    def get_image(self, nframes, start_frame):
+
+        if nframes < start_frame:
+            return self.images[0][0]
+
+        angle_ind = get_dir_angle(self.speed_vec.get_direction()) // 90
+        angle_pair = self.images[angle_ind]
+        wave = (nframes // self.wave_rate) % len(angle_pair)
+        
+        return angle_pair[wave]

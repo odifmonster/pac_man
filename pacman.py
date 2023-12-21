@@ -4,10 +4,11 @@ import pygame, simpleaudio as sa
 
 from structures import maze as mz, position as pos, agent
 
-# ========= GLOBAL CONSTANTS =========
+# ================== GLOBAL CONSTANTS ==================
 DEBUG = True
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-TILE_SIZE = 18
+TILE_SIZE = 20
 DOT_COLOR = (255,255,255)
 
 # ================== GLOBAL VARIABLES ==================
@@ -22,7 +23,7 @@ def init_game_objects():
     pacman = agent.Player((maze.ncols//2-1,maze.nrows-8), (1,0), 0.15)
     pacman.pos.x += 0.5
 
-    blinky = agent.Enemy((maze.ncols//2-1,11), (1,0), 0.15)
+    blinky = agent.Enemy(os.path.join(SCRIPT_DIR, 'gfx', 'blinky'), (maze.ncols//2-1,11), (1,0), 0.15)
     blinky.pos.x += 0.5
 
 # ================== MAIN FUNCTION ==================
@@ -35,9 +36,9 @@ def main():
     clock = pygame.time.Clock()
     frame_rate = 60
 
-    maze_img = pygame.image.load(os.path.join('gfx','maze_sqr.png'))
+    maze_img = pygame.image.load(os.path.join(SCRIPT_DIR, 'gfx','maze_sqr.png'))
 
-    waka = sa.WaveObject.from_wave_file(os.path.join('sfx', 'waka.wav'))
+    waka = sa.WaveObject.from_wave_file(os.path.join(SCRIPT_DIR, 'sfx', 'waka.wav'))
     play_waka = waka.play()
     play_waka.stop()
 
@@ -60,8 +61,9 @@ def main():
                                          pos.get_dir_angle(pacman.speed_vec.get_direction()))
         screen.blit(pm_img, (pm_tl.x*TILE_SIZE, pm_tl.y*TILE_SIZE))
 
-        bkc = blinky.get_center()
-        pygame.draw.circle(screen, (255,0,0), (bkc.x*TILE_SIZE, bkc.y*TILE_SIZE), TILE_SIZE*0.8)
+        bk_tl = blinky.get_tl()
+        bk_img = blinky.get_image(nframes, frame_rate*2)
+        screen.blit(bk_img, (bk_tl.x*TILE_SIZE, bk_tl.y*TILE_SIZE))
 
         pygame.display.flip()
         clock.tick(frame_rate)
@@ -70,7 +72,7 @@ def main():
         # SFX
         if pacman.eating and not play_waka.is_playing():
             play_waka = waka.play()
-        elif not pacman.eating or not pacman.is_moving:
+        elif not pacman.eating:
             play_waka.stop()
 
         # GAME LOGIC

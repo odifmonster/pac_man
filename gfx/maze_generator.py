@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from structures.maze import *
 from structures.position import *
 
-TILE_SIZE = 18
+TILE_SIZE = 20
 
 BG_COLOR = (0,0,0)
 EDGE_COLOR = (0,0,255)
