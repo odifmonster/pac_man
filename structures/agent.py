@@ -64,6 +64,7 @@ class Agent:
 class Player(Agent):
 
     def __init__(self,
+                 gfx_path: os.PathLike,
                  list_pos: CoordLike,
                  speed_vec: CoordLike = (0,0),
                  speed_norm: float = 1,
@@ -75,8 +76,10 @@ class Player(Agent):
         self.eating = False
         self.last_dot = ListCoord(0,0)
 
-        self.images = sorted([f for f in os.listdir('gfx') if 'pacman' in f and '.png' in f])
-        self.images = [load(os.path.join('gfx', img)) for img in self.images]
+        self.mimages = sorted([d for d in os.listdir(gfx_path) if '-m' in d])
+        self.mimages = [load(os.path.join(gfx_path, img)) for img in self.mimages]
+        self.dimages = sorted([d for d in os.listdir(gfx_path) if '-d' in d])
+        self.dimages = [load(os.path.join(gfx_path, img)) for img in self.dimages]
 
         self.next_speed = None
         self.is_moving = False
@@ -106,11 +109,18 @@ class Player(Agent):
         else:
             self.is_moving = False
     
-    def get_image(self, nframes):
+    def get_move_image(self, nframes):
 
-        if not self.is_moving: return self.images[-1]
+        if not self.is_moving: return self.mimages[-1]
 
-        return self.images[(nframes // self.chomp_rate) % len(self.images)]
+        return self.mimages[(nframes // self.chomp_rate) % len(self.mimages)]
+    
+    def get_death_image(self, nframes, death_start):
+
+        if (nframes-death_start) // self.chomp_rate < len(self.dimages):
+            return self.dimages[(nframes-death_start) // self.chomp_rate]
+        
+        return None
 
 class Enemy(Agent):
 

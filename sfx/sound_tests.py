@@ -2,9 +2,10 @@
 from pydub import AudioSegment
 from pydub.playback import play
 
-munch1 = AudioSegment.from_file('munch_1.wav', format='wav', sample_width=1)
-munch2 = AudioSegment.from_file('munch_2.wav', format='wav', sample_width=1)
-pause = AudioSegment.silent(duration=80)
+death1 = AudioSegment.from_file('death_1.wav', format='wav', sample_width=1) + 4
+death2 = AudioSegment.from_file('death_2.wav', format='wav', sample_width=1) + 4
+pause = AudioSegment.silent(duration=10)
+death_end = death2+pause+death2+pause*8
+full_death = death1[:1350] + death_end
 
-full_munch = munch1 + pause + munch2 + pause
-play(full_munch*4)
+play(full_death)
