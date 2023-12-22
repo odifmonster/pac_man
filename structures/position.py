@@ -128,8 +128,13 @@ class ListCoord(Coord):
     elements from 2-D lists.
     """
 
-    def __init__(self, x: int = None, y: int = None, v: tuple[int, int] = None, dir: Direction = None) -> None:
+    def __init__(self,
+                 x: int = None, y: int = None,
+                 v: tuple[int, int] = None,
+                 dir: Direction = None,
+                 coord: Coord = None) -> None:
         if not x is None and not y is None: super().__init__(int(x), int(y), v, dir)
+        elif not coord is None and isinstance(coord, Coord): super().__init__(x=int(coord.x), y=int(coord.y))
         else: super().__init__(x, y, v, dir)
     
     def __add__(self, coord):
@@ -175,10 +180,10 @@ class FloatCoord(Coord):
     def get_direction(self) -> Direction:
         """Get the Direction that this coordinate points in."""
 
-        if self.x == 0 and self.y == -1: return Direction.N
-        if self.x == -1 and self.y == 0: return Direction.W
-        if self.x == 0 and self.y == 1: return Direction.S
-        if self.x == 1 and self.y == 0: return Direction.E
+        if self.x == 0 and self.y < 0: return Direction.N
+        if self.x < 0 and self.y == 0: return Direction.W
+        if self.x == 0 and self.y > 0: return Direction.S
+        if self.x > 0 and self.y == 0: return Direction.E
 
         return None
     
