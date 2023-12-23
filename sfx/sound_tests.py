@@ -2,5 +2,7 @@
 from pydub import AudioSegment
 from pydub.playback import play
 
-start_up = AudioSegment.from_file('wgot/game_start.wav', format='wav') + 9
-start_up.export('siren_0.wav', format='wav')
+s3 = AudioSegment.from_file('wgot/siren_3.wav', format='wav')+9
+s3_fixed = s3[500:1180]*4
+
+s3_fixed.export('siren_3.wav', format='wav')

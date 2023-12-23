@@ -252,6 +252,8 @@ def main():
         # SFX
         if game.playing and not game.play_siren.is_playing():
             game.play_siren = game.sirens[game.next_siren_change].play()
+        if not game.playing and game.play_siren.is_playing():
+            game.play_siren.stop()
         if game.next_siren_change < len(game.siren_changes) \
             and game.nframes >= game.siren_changes[game.next_siren_change]*game.frame_rate:
             game.play_siren.stop()
@@ -276,7 +278,9 @@ def main():
             game.blinky.update_speed(game.maze)
             game.blinky.move(game.maze)
             game.pinky.update_speed(game.maze)
-            game.pinky.move(game.maze)
+            game.pinky.move(game.maze, correct_pos=(not game.pinky.at_home))
+            game.inky.update_speed(game.maze)
+            game.inky.move(game.maze, correct_pos=(not game.inky.at_home))
 
             if game.next_mode_change < len(game.mode_changes) \
                 and game.nframes >= game.frame_rate*game.mode_changes[game.next_mode_change]:

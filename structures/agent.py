@@ -30,7 +30,7 @@ class Agent:
 
         self.passable_tiles = list(Tile)
     
-    def move(self, maze: Maze, speed_vec: FloatCoord, speed_norm: float) -> None:
+    def move(self, maze: Maze, speed_vec: FloatCoord, speed_norm: float, correct_pos: bool = True) -> None:
 
         self.pos += (speed_vec*speed_norm)
         self.pos.wrap(maze.ncols+0.5, maze.nrows, -0.5, 0)
@@ -38,16 +38,16 @@ class Agent:
         speed_dir = speed_vec.get_direction()
         if speed_dir == Direction.N:
             self.list_pos.y = math.ceil(self.pos.y)
-            self.pos.x = self.list_pos.x
+            if correct_pos: self.pos.x = self.list_pos.x
         if speed_dir == Direction.S:
             self.list_pos.y = math.floor(self.pos.y)
-            self.pos.x = self.list_pos.x
+            if correct_pos: self.pos.x = self.list_pos.x
         if speed_dir == Direction.E:
             self.list_pos.x = math.floor(self.pos.x)
-            self.pos.y = self.list_pos.y
+            if correct_pos: self.pos.y = self.list_pos.y
         if speed_dir == Direction.W:
             self.list_pos.x = math.ceil(self.pos.x)
-            self.pos.y = self.list_pos.y
+            if correct_pos: self.pos.y = self.list_pos.y
     
     def can_move(self, maze: Maze, speed: FloatCoord):
 
@@ -157,12 +157,14 @@ class Enemy(Agent):
         self.images = [(load(w0), load(w1)) for w0, w1 in self.images]
         self.wave_rate = 6
 
-    def move(self, maze: Maze) -> None:
+    def move(self, maze: Maze, correct_pos: bool = True) -> None:
 
         if self.list_pos.y == 14 and (self.list_pos.x < 6 or self.list_pos.x >= maze.ncols-6):
-            super().move(maze, self.speed_vec, self.slow_norm)
+            super().move(maze, self.speed_vec, self.slow_norm, correct_pos=correct_pos)
+        elif self.waiting:
+            super().move(maze, self.speed_vec, self.slow_norm, correct_pos=correct_pos)
         else:
-            super().move(maze, self.speed_vec, self.speed_norm)
+            super().move(maze, self.speed_vec, self.speed_norm, correct_pos=correct_pos)
     
     def get_turns(self, maze: Maze):
 
@@ -171,16 +173,16 @@ class Enemy(Agent):
     def update_speed(self, maze: Maze):
 
         if self.at_home:
-            # if self.waiting:
-            #     if not self.can_move(maze, self.speed_vec):
-            #         self.speed_vec = self.speed_vec*-1
+            if self.waiting:
+                if not self.can_move(maze, self.speed_vec):
+                    self.speed_vec = self.speed_vec*-1
             # elif not self.waiting and (self.pos.x < maze.ncols/2-0.6 or self.pos.x > maze.ncols/2-0.4):
             #     dir = FloatCoord(self.pos.x-(maze.ncols/2-0.5), 0).get_direction()
             #     self.speed_vec = FloatCoord(dir=dir)
             #     self.pos += self.speed_vec*self.slow_norm
             # elif not self.waiting:
             #     self.speed_vec = FloatCoord(dir=Direction.N)
-            if self.list_pos.y == 11:
+            if self.list_pos.x == maze.ncols//2 - 1 and self.list_pos.y == 11:
                 self.at_home = False
                 self.passable_tiles = [Tile.EMPTY, Tile.DOT]
 
