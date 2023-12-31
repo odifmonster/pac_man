@@ -1,11 +1,17 @@
 #!/usr/bin/env python
+
 from enum import Enum
 from typing import Sequence
+#import os, sys
 from pygame import Rect
+
+#SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+#sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from structures.position import *
 
 class Tile(Enum):
+    """Enum for holding tile types and equivalent strings"""
 
     EMPTY, DOT, EDGE, OOB, GHOST_WALL = '-', 'o', 'E', 'X', 'G'
 
@@ -28,43 +34,36 @@ class Maze:
     def __repr__(self) -> str:
         return '\n'.join([''.join([str(t) for t in row]) for row in self.tiles])
     
-    def get_tile(self, pos: Coord) -> Tile:
-        
-        if not pos.has_int_vals():
-            raise ValueError('Tile coordinates of maze must use integer values.')
-        
-        if pos.y == 14 and (pos.x < 6 or pos.x >= self.ncols-6):
+    def get_tile(self, pos: ListCoord) -> Tile:
+        if pos.getr() == 14 and (pos.getc() < 6 or pos.getc() >= self.ncols-6):
             pos.wrap(self.ncols, self.nrows)
-
+        
         if not pos.is_in_bounds(self.nrows, self.ncols):
             return Tile.OOB
         
-        return self.tiles[pos.y][pos.x]
+        return self.tiles[pos.getr()][pos.getc()]
     
-    def set_tile(self, pos: Coord, ttype: Tile) -> None:
-        
-        if not pos.has_int_vals() or not pos.is_in_bounds(self.nrows, self.ncols):
-            raise ValueError('Invalid position coordinates passed to Maze.set_tile()')
-
+    def set_tile(self, pos: ListCoord, ttype: Tile) -> None:
         self.tiles[pos.y][pos.x] = ttype
-
-    def get_tile_rects(self, pos: Coord, tsize: int) -> list[Rect]:
+    
+    def get_tile_rects(self, pos: ListCoord, tsize: int) -> list[Rect]:
         
-        if not pos.has_int_vals() or not pos.is_in_bounds(self.nrows, self.ncols):
-            raise IndexError('Invalid position coordinates passed to Maze.get_tile_rects()')
+        if not pos.is_in_bounds(self.nrows, self.ncols):
+            raise IndexError('Cannot get drawable points for out-of-bounds maze tile.')
         
         if self.get_tile(pos) != Tile.EDGE:
             return []
         
-        moves = Direction.list_in_order()
+        moves = [Direction.E, Direction.NE, Direction.N, Direction.NW,
+                 Direction.W, Direction.SW, Direction.S, Direction.SE]
         rects = []
-        float_pos = Coord(x=pos.x*tsize, y=pos.y*tsize)
+        float_pos = FloatCoord(x=pos.x*tsize, y=pos.y*tsize)
 
         for move in moves:
             adj = pos.get_adj(move)
 
             if self.get_tile(adj) not in Maze.BOUNDARY_TILES:
-                tl = float_pos.midpoint_to(Coord(x=adj.x*tsize, y=adj.y*tsize))
+                tl = float_pos.midpoint_to(FloatCoord(x=adj.x*tsize, y=adj.y*tsize))
                 rects.append(Rect(tl.x, tl.y, tsize, tsize))
         
         tile_rect = Rect(float_pos.x, float_pos.y, tsize, tsize)
@@ -72,36 +71,32 @@ class Maze:
         return [rect.clip(tile_rect) for rect in rects]
 
     # ================== MAZE INITIALIZATION ==================
-
+    
     def add_block(self, block: Block, ttype: Tile, ignore_type: Sequence[Tile] = []) -> None:
 
-        lblock = list(block)
+        start, end = block
 
-        for i, arg in enumerate(lblock):
-            if not type(arg) is Vector:
-                if type(arg) in (tuple, list) and len(arg) == 2:
-                    lblock[i] = Coord(x=arg[0], y=arg[1])
-                else:
-                    raise TypeError('block argument for Maze.add_block() must be a Block (see structures.position.Block)')
-                
-        start, end = lblock
+        if not isinstance(start, ListCoord):
+            start = ListCoord(x=start[0], y=start[1])
+        if not isinstance(end, ListCoord):
+            end = ListCoord(x=end[0], y=end[1])
         
         start.wrap(self.ncols, self.nrows)
         end.wrap(self.ncols, self.nrows)
         
         for r in range(start.y, end.y+1):
             for c in range(start.x, end.x+1):
-                pos = Coord(x=c, y=r)
+                pos = ListCoord(x=c, y=r)
 
                 if self.get_tile(pos) not in ignore_type:
-                    self.set_tile(Coord(x=c,y=r), ttype)
+                    self.set_tile(ListCoord(x=c,y=r), ttype)
     
     def add_blocks(self, blocks: list[Block], ttype: Tile) -> None:
 
         for block in blocks:
             self.add_block(block, ttype)
-
-    def init(self) -> None:
+    
+    def init(self):
         """Set up all walls/edges in maze separately from constructor method."""
 
         self.add_block(((0,0),(-1,-1)), Tile.EDGE) # outer box

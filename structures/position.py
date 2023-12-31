@@ -1,206 +1,143 @@
 #!/usr/bin/env python
 
-from typing import Union, TypeAlias
 from enum import Enum
+from typing import assert_never, Self, TypeAlias, Union
 import math
 
-CoordVal: TypeAlias = Union[int, float]
-
 class Direction(Enum):
-    """Convenience class to have directions as separate types rather than hard-coded values."""
 
-    E, NE, N, NW = 0, 1, 2, 3
-    W, SW, S, SE = 4, 5, 6, 7
+    N, E, S, W = 0, 1, 2, 3
+    NE, NW, SE, SW = 4, 5, 6, 7
 
-def get_dir_angle(dir: Direction) -> int:
+    @classmethod
+    def get_angle(cls, d: Self) -> int:
 
-    match dir:
-        case Direction.E: return 0
-        case Direction.NE: return 45
-        case Direction.N: return 90
-        case Direction.NW: return 135
-        case Direction.W: return 180
-        case Direction.SW: return 225
-        case Direction.S: return 270
-        case Direction.SE: return 315
-
-def get_reverse(dir: Direction) -> Direction:
+        match d:
+            case cls.E: return 0
+            case cls.NE: return 45
+            case cls.N: return 90
+            case cls.NW: return 135
+            case cls.W: return 180
+            case cls.SW: return 225
+            case cls.S: return 270
+            case cls.SE: return 315
+            case _ as unreachable:
+                assert_never(unreachable)
     
-    dirs = list(Direction)
-    dir_ind = dirs.index(dir)
+    @classmethod
+    def get_reverse(cls, d: Self) -> Self:
 
-    return dirs[(dir_ind+len(dirs)//2)%len(dirs)]
-
-class Coord:
-    """
-    Generic class for coordinates and directional vectors including a couple convenience
-    methods.
+        match d:
+            case cls.E: return cls.W
+            case cls.NE: return cls.SW
+            case cls.N: return cls.S
+            case cls.NW: return cls.SE
+            case cls.W: return cls.E
+            case cls.SW: return cls.NE
+            case cls.S: return cls.N
+            case cls.SE: return cls.NW
+            case _ as unreachable:
+                assert_never(unreachable)
     
-    Constructor method accepts either x+y values, a vector represented as a 2-length
-    sequence, or a Direction indicating where the vector should point. Direction-based
-    vectors always have abs(x) and abs(y) = 0 or 1.
-    """
+    @classmethod
+    def list_in_order(cls) -> list[Self]:
 
-    def __init__(self, x: CoordVal = None, y: CoordVal = None,
-                 v: tuple[CoordVal, CoordVal] = None,
-                 dir: Direction = None) -> None:
+        return [cls.E, cls.NE, cls.N, cls.NW, cls.W, cls.SW, cls.S, cls.SE]
+
+class Vector:
+
+    def __init__(self, x: float = None, y: float = None,
+                 v: tuple[float, float] = None,
+                 d: Direction = None,
+                 vec: Self = None) -> None:
         
-        if not x is None and not y is None: # x+y args override all other present arguments
-            self.x = x
-            self.y = y
-        elif not v is None: # v overrides subsequent args when no x+y passed
-            self.x = v[0]
-            self.y = v[1]
-        elif not dir is None: # dir only used when no other args passed to constructor
-            match dir:
-                case Direction.N:
-                    self.x, self.y = 0, -1
-                case Direction.S:
-                    self.x, self.y = 0, 1
-                case Direction.E:
-                    self.x, self.y = 1, 0
-                case Direction.W:
-                    self.x, self.y = -1, 0
-                case Direction.NE:
-                    self.x, self.y = 1, -1
-                case Direction.NW:
-                    self.x, self.y = -1, -1
-                case Direction.SE:
-                    self.x, self.y = 1, 1
-                case Direction.SW:
-                    self.x, self.y = -1, 1
-        else: # raise error if Coord constructor called with invalid arguments
-            raise ValueError('Too many NoneTypes passed to Coord constructor.')
+        if not (x is None and y is None):
+            try:
+                self.x, self.y = float(x), float(y)
+            except ValueError:
+                raise TypeError('x and y args for Vector constructor must be castable to float.')
+        elif not v is None:
+            if not type(v) in (list, tuple):
+                raise TypeError('v arg for Vector constructor must be a 2-length list or 2-tuple.')
+            elif not len(v) == 2:
+                raise ValueError('v arg for Vector constructor must be a 2-length list or 2-tuple.')
+            else:
+                try:
+                    self.x, self.y = float(v[0]), float(v[1])
+                except ValueError:
+                    raise TypeError('elements of v arg for Vector constructor must be castable to floats.')
+        elif not d is None:
+            if not type(d) is Direction:
+                raise TypeError('d arg for Vector constructor must be a Direction.')
+            else:
+                theta = 2 * math.pi * Direction.get_angle(d) / 360
+                self.x, self.y = math.cos(theta), math.sin(theta)
+                if self.x != 0: self.x /= abs(self.x)
+                if self.y != 0: self.y /= abs(self.y)
+        elif not vec is None:
+            if not type(vec) is Self:
+                raise TypeError('vec arg for Vector constructor must be a Vector.')
+            else:
+                self.x, self.y = vec.x, vec.y
+        else:
+            raise ValueError('Vector object cannot be instantiated with all NoneType arguments.')
     
     def __repr__(self) -> str:
-        return f'(x: {self.x}, y: {self.y})'
+        return f'({self.x:.1}, {self.y:.1})'
     
-    def __eq__(self, coord) -> bool:
-        return self.x == coord.x and self.y == coord.y
+    def __eq__(self, other: Self) -> bool:
+        return self.x == other.x and self.y == other.y
     
-    def __add__(self, coord):
-        return type(self)(self.x+coord.x, self.y+coord.y)
+    def __add__(self, other: Self) -> Self:
+        return type(self)(self.x+other.x, self.y+other.y)
     
-    def __sub__(self, coord):
-        return type(self)(self.x-coord.x, self.y-coord.y)
+    def __sub__(self, other: Self) -> Self:
+        return type(self)(self.x-other.x, self.y-other.y)
     
-    def get_tuple(self) -> tuple:
-        """Get vector components as 2-tuple of form (x,y)."""
+    def __mul__(self, coeff: float) -> Self:
+        return type(self)(self.x*coeff, self.y*coeff)
+    
+    def as_tuple(self) -> tuple[float, float]:
         return (self.x, self.y)
     
-    def dist_from(self, coord) -> float:
-        """
-        Arguments: coord (Coord) -- the Coord object to calculate the distance from
-        Returns:         (float) -- the euclidean distance between this object and the coord argument
-        """
-        return math.sqrt((self.x-coord.x)**2+(self.y-coord.y)**2)
-    
-    def wrap(self, xmax: CoordVal, ymax: CoordVal,
-             xmin: CoordVal = 0, ymin: CoordVal = 0, in_place: bool = True):
-        """
-        Arguments:
-            xmax (CoordVal) -- maximum allowed x value (as float or int)
-            ymax (CoordVal) -- maximum allowed y value
-            xmin (CoordVal) -- (optional; default=0) minimum allowed x value
-            ymin (CoordVal) -- (optional; default=0) minimum allowed y value
-            in_place (bool) -- (optional; default=True) set this argument to false when you want
-                               the function to return a new Coord object rather than change the
-                               the current one.
+    def wrap(self, xmax: float, ymax: float,
+             xmin: float = 0.0, ymin: float = 0.0,
+             in_place: bool = True) -> None | Self:
         
-        Returns:
-            None when in_place is True. The Coord object will "wrap" its coordinates back around
-            to be within the bounds set by xmin, xmax, ymin, and ymax (if necessary). When in_place
-            is False, the function returns a new Coord object with the wrapped x and y values.
-        """
-
         new_x = ((self.x-xmin) + (xmax-xmin)) % (xmax-xmin) + xmin
         new_y = ((self.y-ymin) + (ymax-ymin)) % (ymax-ymin) + ymin
 
         if not in_place:
             return type(self)(x=new_x, y=new_y)
         
-        self.x = new_x
-        self.y = new_y
-
-class ListCoord(Coord):
-    """
-    Subclass of Coord for integer vector operations. Includes convenience functions for accessing
-    elements from 2-D lists.
-    """
-
-    def __init__(self,
-                 x: int = None, y: int = None,
-                 v: tuple[int, int] = None,
-                 dir: Direction = None,
-                 coord: Coord = None) -> None:
-        if not x is None and not y is None: super().__init__(int(x), int(y), v, dir)
-        elif not coord is None and isinstance(coord, Coord): super().__init__(x=int(coord.x), y=int(coord.y))
-        else: super().__init__(x, y, v, dir)
+        self.x, self.y = new_x, new_y
     
-    def __add__(self, coord):
-        return ListCoord(self.x+int(coord.x), self.y+int(coord.y))
+    def get_adj(self, d: Direction) -> Self:
+        return self + type(self)(d=d)
     
-    def get_adj(self, dir: Direction):
-        """ Arguments: dir (Direction) -- the Direction of the adjacent tile
-            Returns:   An adjacent ListCoord to this object in the specified direction
-        """
-
-        return self + ListCoord(dir=dir)
+    def get_direction(self) -> Direction:
+        
+        if self.x == 0 and self.y < 0: return Direction.N
+        elif self.x > 0 and self.y == 0: return Direction.E
+        elif self.x == 0 and self.y > 0: return Direction.S
+        elif self.x < 0 and self.y == 0: return Direction.W
+        else:
+            raise ValueError('Cannot get direction of Vector pointing in non-cardinal Direction.')
     
     def is_in_bounds(self, nrows: int, ncols: int) -> bool:
-        """Return whether this list coordinate is within the bounds of nrows and ncols."""
-
-        return self.x >= 0 and self.y >= 0 and self.x < ncols and self.y < nrows
+        return self.x >= 0 and self.x <= ncols-1 and self.y >= 0 and self.y <= nrows-1
     
-    # Convenience functions to refer to x+y attributes as r(ow) and c(olumn)
-    def getr(self):
-        return self.y
+    def has_int_vals(self) -> bool:
+        return int(self.x) == self.x and int(self.y) == self.y
     
-    def getc(self):
-        return self.x
-
-class FloatCoord(Coord):
-    """
-    Subclass of Coord to represent floating point vector positions in the game. Probably just
-    messy coding if we're being honest.
-    """
-
-    def __init__(self,
-                 x: CoordVal = None, y: CoordVal = None,
-                 v: tuple[CoordVal, CoordVal] = None,
-                 dir: Direction = None,
-                 coord: Coord = None) -> None:
-        
-        if not coord is None:
-            self.x = coord.x
-            self.y = coord.y
-        else:
-            super().__init__(x, y, v, dir)
-
-    def get_direction(self) -> Direction:
-        """Get the Direction that this coordinate points in."""
-
-        if self.x == 0 and self.y < 0: return Direction.N
-        if self.x < 0 and self.y == 0: return Direction.W
-        if self.x == 0 and self.y > 0: return Direction.S
-        if self.x > 0 and self.y == 0: return Direction.E
-
-        return None
+    def dist_from(self, other: Self) -> float:
+        return math.sqrt((self.x-other.x)**2 + (self.y-other.y)**2)
     
-    def __mul__(self, scale: float):
-        return FloatCoord(self.x*scale, self.y*scale)
-    
-    def midpoint_to(self, coord):
-        return FloatCoord((self.x+coord.x)/2, (self.y+coord.y)/2)
+    def midpoint_to(self, other: Self) -> Self:
+        return type(self)(0.5*(self.x+other.x), 0.5*(self.y+other.y))
 
-CoordLike: TypeAlias = Union[Coord, list[CoordVal, CoordVal], tuple[CoordVal, CoordVal]]
-Block: TypeAlias = Union[tuple[CoordLike, CoordLike], list[CoordLike, CoordLike]]
+Coord: TypeAlias = Vector
+VectorLike: TypeAlias = Union[Vector, tuple[float, float], list[float, float]]
+Block: TypeAlias = Union[tuple[VectorLike, VectorLike], list[VectorLike, VectorLike]]
 
-ZERO = FloatCoord(0, 0)
-
-def main():
-    test = ListCoord(4,5)
-    print(test.get_adj(Direction.N), test.get_adj(Direction.E), test.get_adj(Direction.NE))
-
-if __name__ == '__main__':
-    main()
+ZERO = Vector(0,0)
